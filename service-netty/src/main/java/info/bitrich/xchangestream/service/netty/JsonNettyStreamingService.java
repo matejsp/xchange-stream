@@ -1,8 +1,10 @@
 package info.bitrich.xchangestream.service.netty;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,6 +12,7 @@ import java.io.IOException;
 
 public abstract class JsonNettyStreamingService extends NettyStreamingService<JsonNode> {
     private static final Logger LOG = LoggerFactory.getLogger(JsonNettyStreamingService.class);
+    protected final ObjectMapper objectMapper = StreamingObjectMapperHelper.getObjectMapper();
 
     public JsonNettyStreamingService(String apiUrl) {
         super(apiUrl);
@@ -22,7 +25,6 @@ public abstract class JsonNettyStreamingService extends NettyStreamingService<Js
     @Override
     public void messageHandler(String message) {
         LOG.debug("Received message: {}", message);
-        ObjectMapper objectMapper = new ObjectMapper();
         JsonNode jsonNode;
 
         // Parse incoming message to JSON
@@ -40,6 +42,14 @@ public abstract class JsonNettyStreamingService extends NettyStreamingService<Js
             }
         } else {
             handleMessage(jsonNode);
+        }
+    }
+
+    protected void sendObjectMessage(Object message) {
+        try {
+            sendMessage(objectMapper.writeValueAsString(message));
+        } catch (JsonProcessingException e) {
+            LOG.error("Error creating json message: {}", e.getMessage());
         }
     }
 }
